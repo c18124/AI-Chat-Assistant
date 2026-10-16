@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+    <title>AI chat assistant </title>
+    <style>
+
+        #chat {
+            background-color: rgba(173, 216, 230, 0.75);
+            box-sizing: border-box;
+            width: 500px;
+            height: 400px;
+            border: 1px solid gray;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            margin-left: auto;
+            margin-right: auto;
+            overflow-y: auto;
+        }
+        #question {
+            box-sizing: border-box;
+            flex: 1;
+            padding: 10px;
+            border: 1px solid gray;
+            border-radius: 8px;
+        }
+        #send {
+            box-sizing: border-box;
+            background-color: blue;
+            color: white;
+            border-radius: 8px;
+            padding: 10px;
+        }
+        #input-area {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            width: 500px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .message {
+            background-color:white;
+            padding:8px 12px 25px 12px;
+            border-radius:10px;
+            max-width:75%;
+            margin-bottom:10px;
+            white-space: normal;
+            position:relative;
+            word-break:break-word;
+        }
+        .user {
+            background-color: blue;
+            color: white;
+            margin-left: auto;
+            width:fit-content;
+        }
+        .ai {
+            background-color: white;
+            margin-right: auto;
+            color: black;
+            width:fit-content;
+        }
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+
+            background-color: black;
+            color: white;
+
+            padding: 10px 20px;
+            border-radius: 8px;
+
+            opacity: 0.8;
+
+            z-index: 999;
+        }
+        .dots {
+            animation: blink 1s infinite; 
+        }
+        @keyframes blink {
+            0% {
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.2;
+            }
+        }
+        .message p {
+            margin:0;
+            white-space: pre-wrap;
+        }
+        .time {
+            position:absolute;
+            right:10px;
+            bottom:5px;
+
+            font-size:12px;
+            opacity:0.6;
+        }
+       
+
+        pre {   
+            background-color: #222;    
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+          
+        pre code {
+            color: white;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+        }
+        
+
+    </style>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+      
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+</head>
+
+
+<body>
+<div id="chat"></div>
+
+<div id ="input-area">
+<input id="question">
+<button id="send">发送</button>
+<button id="clear">清空聊天记录</button>
+</div>
+
+
+<script>
+      //load the chat history，打开界面时加载聊天记录
+    async function loadHistory(){
+        let response = await fetch(
+            "http://127.0.0.1:8000/history/001"
+        );
+
+        let data = await response.json();
+
+        for(let message of data.messages){
+            if(message.role === "user"){
+                addMessage(
+                    message.content,
+                    "user"
+                );
+            }
+
+            else{
+                addMessage(
+                    message.content,
+                    "ai"
+                );
+            }
+        }
+    }
+
+
+      //show a toast message,界面弹窗显示消息后延时2秒后消失
+    function showToast(message) {
+        let toast = document.createElement("div");
+        toast.className = "toast";  //add a class to the toast
+        toast.innerText = message;  //add the message to the toast
+        document.body.appendChild(toast);  
+        setTimeout(() => {
+            toast.remove();
+        }, 2000);
+    }
+
+      //add a message to the chat
+    function addMessage(content, role) {
+        let chat = document.getElementById("chat");
+        let message = document.createElement("div");
+        message.className = "message " + role;  //add a class to the message 总的message加上各个角色的class
+        let time = new Date().toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+
+            message.innerHTML = `
+            ${marked.parse(content)}
+            <span class="time">
+            ${time}
+            </span>
+            `;
+
+        chat.appendChild(message);  
+          //将代码块高亮
+        message.querySelectorAll("pre code").forEach((block) => {
+            hljs.highlightElement(block);
+        });
+        requestAnimationFrame(() => {
+            chat.scrollTop = chat.scrollHeight;  //scroll to the bottom底部滚动
+        });
+    }
+    
+      //添加enter键发送消息功能
+    document.getElementById("question").addEventListener("keydown",function(event) {
+        if (event.key === "Enter") {
+            document.getElementById("send").click();
+        }
+    });
+      //发送消息功能，监听按钮点击事件
+    document.getElementById("send").addEventListener("click",async function() {
+        let question = document.getElementById("question").value;  //获取输入框的内容
+        question = question.trim(); //去除前后空格，防止发送空消息
+        if (question === "") {
+            return;
+        }
+        document.getElementById("send").disabled = true;  //将按钮置为禁用
+        document.getElementById("question").disabled = true;  //将输入框置为禁用
+        document.getElementById("send").innerText = "生成中...";
+        addMessage(question, "user");  //添加消息到聊天记录，
+        document.getElementById("question").value = "";
+          //将数据发送到服务器
+        let data = {
+            user_id: "001",
+            question: question
+        }
+          //创建一个loading消息，显示AI正在思考
+        let chat = document.getElementById("chat");
+
+        let loading = document.createElement("div");
+        loading.className = "message ai";
+        let contentDiv = document.createElement("div");
+        contentDiv.className = "content";
+        let timeSpan = document.createElement("span");
+        timeSpan.className = "time";
+
+        loading.appendChild(contentDiv);
+        loading.appendChild(timeSpan);
+
+        contentDiv.innerHTML = `
+        AI 正在思考
+        <span class="dots">...</span>
+        `;
+
+        chat.appendChild(loading);
+
+        let streamSucce = false;
+        let answer = "";
+          //try catch  finally块，将数据发送到服务器
+    try {
+        let response = await fetch("http://127.0.0.1:8000/chat/stream",{
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+        })
+        console.log(response.ok);
+        if (!response.ok) {
+            throw new Error("http error");
+        }
+        let reader = response.body.getReader();
+    let decoder = new TextDecoder("utf-8");
+    let hasStarted = false;
+
+    while (true) {
+        let { done, value } = await reader.read();
+
+        if (done) {
+            break;
+        }
+
+        let text = decoder.decode(value, { stream: true });
+
+        if (!text) {continue; }
+
+        if (!hasStarted) {
+            contentDiv.innerHTML = "";
+            hasStarted = true;
+        }
+
+        answer += text;
+
+        contentDiv.innerHTML = marked.parse(answer);
+        loading.querySelectorAll("pre code").forEach((block) => {
+            hljs.highlightElement(block);
+        });
+
+        chat.scrollTop = chat.scrollHeight;
+    }
+    let time = new Date().toLocaleTimeString(
+            [],
+            {
+                hour: "2-digit",
+                minute: "2-digit"
+            }
+        );
+        timeSpan.innerText = time;
+
+    streamSuccess = true;
+}    
+
+    catch (error) {
+        console.error("Error:", error);
+        showToast("请求失败，请检查服务器")
+
+        if (answer === "") {
+            addMessage("服务器出错，请稍后重试", "ai");
+        } 
+        else {
+            contentDiv.innerHTML += `
+                <p>⚠️ 回答生成中断，请稍后重试</p>
+            `;
+        }
+    }
+    finally {
+        if (!streamSuccess && answer === "") {
+            loading.remove();
+        }
+        
+        document.getElementById("send").disabled = false;
+        document.getElementById("question").disabled = false;  //disable the input area
+        document.getElementById("send").innerText = "发送";
+        document.getElementById("question").focus();  //focus on the input area重新将光标集中到输入框
+        }
+    });
+
+      //clear the chat
+    document.getElementById("clear").addEventListener("click", async function(){
+
+        if(!confirm("是否清空聊天记录？")){
+            return;
+            }
+    try {
+        console.log("开始清空");
+        let response = await fetch(
+            "http://127.0.0.1:8000/clear", //api endpoint
+            {
+                method: "POST", //method to use
+                headers: { 
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    user_id: "001"
+                })
+            }
+        );
+        console.log("服务器返回");
+        if(!response.ok){
+            throw new Error("HTTP error");  // 服务器没有成功时主动抛出错误
+        }
+
+        let result = await response.json();
+      // clear the chat 实际的网页清空气泡
+        document.getElementById("chat").innerHTML = "";
+        showToast(result.message);  // 显示清空成功的消息
+    }
+
+    catch (error) {
+        showToast("服务器连接失败");
+
+        addMessage("服务器出错，请稍后重试", "ai");  
+    }
+});
+
+    loadHistory(); //load the chat history
+    
+    </script>
+</body>
+
+</html>
