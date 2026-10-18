@@ -1,0 +1,4 @@
+Python 基础知识：
+Python 的字典使用键值对保存数据。
+Python 的列表可以保存多个元素。
+Python 的函数使用 def 关键字定义。
