@@ -267,7 +267,7 @@ def answer_question(question: str) -> str:
 
 
 if __name__ == "__main__":
-    question = "日本东京明天会不会下雨？"
+    question = "Python 的字典使用什么方式保存数据？"
 
     answer = answer_question(question)
 
