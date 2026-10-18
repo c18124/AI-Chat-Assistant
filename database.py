@@ -1,73 +1,85 @@
+
 import sqlite3
+from contextlib import contextmanager
+from pathlib import Path
 
-conn = sqlite3.connect(
-    "chat.db",
-    check_same_thread=False#database name
-    )
 
-cursor = conn.cursor()
+# 数据库文件放在 database.py 所在的文件夹
+DB_PATH = Path(__file__).parent / "chat.db"
 
-cursor.execute(
-"""
-CREATE TABLE IF NOT EXISTS messages(
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id TEXT,
-    role TEXT,
-    content TEXT
-)
-"""
-)   
 
-conn.commit()
+@contextmanager
+def get_db():
+    # 每次数据库操作都创建独立连接
+    conn = sqlite3.connect(DB_PATH, timeout=10)
+
+    try:
+        yield conn
+        conn.commit()
+
+    except Exception:
+        conn.rollback()
+        raise
+
+    finally:
+        conn.close()
+
+
+# 初始化数据库表
+with get_db() as conn:
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS messages(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT,
+            role TEXT,
+            content TEXT
+        )
+    """)
+
 
 def save_messages(user_id, role, content):
+    with get_db() as conn:
+        conn.execute(
+            """
+            INSERT INTO messages
+            (user_id, role, content)
+            VALUES (?, ?, ?)
+            """,
+            (user_id, role, content)
+        )
 
-    cursor.execute(
-    """
-    INSERT INTO messages
-    (user_id, role, content)
-    VALUES (?, ?, ?)
-    """,
-    (user_id, role, content)
-    )
 
-    conn.commit()
-    
 def get_messages(user_id):
+    with get_db() as conn:
+        cursor = conn.execute(
+            """
+            SELECT role, content
+            FROM messages
+            WHERE user_id = ?
+            ORDER BY id ASC
+            """,
+            (user_id,)
+        )
 
-    cursor.execute(
-    """
-    SELECT role,content
-    FROM messages
-    WHERE user_id=?
-    """,
-    (user_id,)
-    )
+        rows = cursor.fetchall()
 
-
-    rows = cursor.fetchall()
-
-
-    messages=[]
-
+    messages = []
 
     for row in rows:
-        messages.append(
-        {
-            "role":row[0],
-            "content":row[1]
-        }
-        )
+        messages.append({
+            "role": row[0],
+            "content": row[1]
+        })
 
     return messages
 
-def clear_messages(user_id):
-    cursor.execute(
-    """
-    DELETE FROM messages
-    WHERE user_id=?
-    """,
-    (user_id,)
-    )
 
-    conn.commit()
+def clear_messages(user_id):
+    with get_db() as conn:
+        conn.execute(
+            """
+            DELETE FROM messages
+            WHERE user_id = ?
+            """,
+            (user_id,)
+        )

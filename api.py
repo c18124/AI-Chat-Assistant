@@ -1,10 +1,11 @@
 from fastapi import FastAPI
 from ai import chat as ai_chat, chat_stream
 from pydantic import BaseModel
-from database import clear_messages, get_messages
+from database import clear_messages, get_messages, save_messages
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import time
+from rag import answer_question
 
 app = FastAPI()
 app.add_middleware(
@@ -63,3 +64,27 @@ def chat_stream_api(request: ChatRequest):
         generator,
         media_type="text/plain; charset=utf-8"
     )
+
+@app.post("/rag/chat")
+def rag_chat_api(request: ChatRequest):
+    # 保存用户问题
+    save_messages(
+        request.user_id,
+        "user",
+        request.question
+    )
+
+    # 检索知识库并生成回答
+    answer = answer_question(request.question)
+
+    # 保存 AI 回答
+    save_messages(
+        request.user_id,
+        "assistant",
+        answer
+    )
+
+    # 返回答案给前端
+    return {
+        "answer": answer
+    }

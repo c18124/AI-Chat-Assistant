@@ -50,14 +50,14 @@ def chat_stream(user_id, question):
     answer = ""
 
     try:
-        for chunk in response:
+        for chunk in response:  #
             content = chunk.choices[0].delta.content
 
-            if content:
+            if content:  # 如果有内容，则添加到回答中
                 answer += content
                 yield content
 
     finally:
-        if answer:
+        if answer:  # 如果回答不为空，则保存回答
             save_messages(user_id, "assistant", answer)
     

@@ -171,14 +171,27 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
 </head>
 
 
-<body>
-<div id="chat"></div>
 
-<div id ="input-area">
-<input id="question">
-<button id="send">发送</button>
-<button id="clear">清空聊天记录</button>
-</div>
+<body>
+    <div id="chat"></div>
+
+    <!-- 聊天模式切换 -->
+    <div id="mode-area">
+        <label for="chat-mode">聊天模式：</label>
+
+        <select id="chat-mode">
+            <option value="normal">普通聊天</option>
+            <option value="rag">知识库问答(RAG)</option>
+        </select>
+    </div>
+
+    <div id="input-area">
+        <input id="question">
+        <button id="send">发送</button>
+        <button id="clear">清空聊天记录</button>
+    </div>
+
+
 
 
 <script>
@@ -255,7 +268,10 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
             document.getElementById("send").click();
         }
     });
+
       //发送消息功能，监听按钮点击事件
+    // true：使用 RAG 知识库问答
+    // false：使用原来的普通流式聊天
     document.getElementById("send").addEventListener("click",async function() {
         let question = document.getElementById("question").value;  //获取输入框的内容
         question = question.trim(); //去除前后空格，防止发送空消息
@@ -272,6 +288,8 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
             user_id: "001",
             question: question
         }
+        const useRag =
+        document.getElementById("chat-mode").value === "rag";  // 获取选择的聊天模式,判断useRag
           //创建一个loading消息，显示AI正在思考
         let chat = document.getElementById("chat");
 
@@ -292,60 +310,87 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
 
         chat.appendChild(loading);
 
-        let streamSucce = false;
+        let streamSuccess = false;
         let answer = "";
           //try catch  finally块，将数据发送到服务器
     try {
-        let response = await fetch("http://127.0.0.1:8000/chat/stream",{
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify(data)
-        })
+        const endpoint = useRag   //判断用哪个接口
+            ? "http://127.0.0.1:8000/rag/chat"
+            : "http://127.0.0.1:8000/chat/stream";
+
+        let response = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(data)
+        });
+
         console.log(response.ok);
         if (!response.ok) {
             throw new Error("http error");
         }
-        let reader = response.body.getReader();
-    let decoder = new TextDecoder("utf-8");
-    let hasStarted = false;
 
-    while (true) {
-        let { done, value } = await reader.read();
+    
+    if (useRag) {
+        // RAG 返回 JSON，直接解析完整答案
+        const result = await response.json();
 
-        if (done) {
-            break;
-        }
+        answer = result.answer || "";
 
-        let text = decoder.decode(value, { stream: true });
+        contentDiv.innerHTML = marked.parse(answer);  // 解析 Markdown 格式的回答
 
-        if (!text) {continue; }
-
-        if (!hasStarted) {
-            contentDiv.innerHTML = "";
-            hasStarted = true;
-        }
-
-        answer += text;
-
-        contentDiv.innerHTML = marked.parse(answer);
         loading.querySelectorAll("pre code").forEach((block) => {
-            hljs.highlightElement(block);
+            hljs.highlightElement(block);  // 高亮代码块
         });
 
         chat.scrollTop = chat.scrollHeight;
-    }
-    let time = new Date().toLocaleTimeString(
-            [],
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
-        timeSpan.innerText = time;
 
+    } 
+    else {
+        // 普通聊天仍然使用流式输出
+        let reader = response.body.getReader();
+        let decoder = new TextDecoder("utf-8");
+        let hasStarted = false;   // 标记是否已经开始解析消息
+
+        while (true) {
+            let { done, value } = await reader.read();
+
+            if (done) {
+                break;
+            }
+
+            let text = decoder.decode(value, { stream: true });
+
+            if (!text) {
+                continue;
+            }
+
+            if (!hasStarted) {
+                contentDiv.innerHTML = "";
+                hasStarted = true;
+            }
+
+            answer += text;
+
+            contentDiv.innerHTML = marked.parse(answer);
+            loading.querySelectorAll("pre code").forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            chat.scrollTop = chat.scrollHeight;
+        }
+    }
+
+// 两种模式都更新消息时间
+    let time = new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+
+    timeSpan.innerText = time;
     streamSuccess = true;
+
 }    
 
     catch (error) {
