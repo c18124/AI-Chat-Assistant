@@ -7,13 +7,43 @@ client = OpenAI(
     base_url="https://api.deepseek.com"
     )
 
-def chat(user_id, question):
-    messages = get_messages(user_id)
+# 只限制发给模型的历史，不删除数据库中的记录。
+MAX_HISTORY_MESSAGES = 20
+MAX_HISTORY_CHARS = 20000
 
+
+def build_messages(user_id, question):
+    history = get_messages(user_id)
+    messages = []
+    history_chars = 0
+
+    # 从最新消息向前选取，保留连续的最近一段历史。
+    for message in reversed(history[-MAX_HISTORY_MESSAGES:]):
+        content_length = len(message["content"])
+
+        if history_chars + content_length > MAX_HISTORY_CHARS:
+            break
+
+        messages.append(message)
+        history_chars += content_length
+
+    messages.reverse()
+
+    # 避免截取后的上下文以孤立的 AI 回答开头。
+    while messages and messages[0]["role"] == "assistant":
+        messages.pop(0)
+
+    # 当前问题始终保留，不计入历史消息的额度。
     messages.append({
         "role": "user",
         "content": question
     })
+
+    return messages
+
+
+def chat(user_id, question):
+    messages = build_messages(user_id, question)
 
     save_messages(user_id, "user", question)
 
@@ -32,12 +62,7 @@ def chat(user_id, question):
 
 
 def chat_stream(user_id, question):
-    messages = get_messages(user_id)
-
-    messages.append({
-        "role": "user",
-        "content": question
-    })
+    messages = build_messages(user_id, question)
 
     save_messages(user_id, "user", question)
 
