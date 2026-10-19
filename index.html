@@ -162,6 +162,7 @@
     </style>
 
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js"></script>
       
 <link rel="stylesheet"
 href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
@@ -246,7 +247,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
         );
 
             message.innerHTML = `
-            ${marked.parse(content)}
+            ${DOMPurify.sanitize(marked.parse(content), { USE_PROFILES: { html: true } })}
             <span class="time">
             ${time}
             </span>
@@ -338,7 +339,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
 
         answer = result.answer || "";
 
-        contentDiv.innerHTML = marked.parse(answer);  // 解析 Markdown 格式的回答
+        contentDiv.innerHTML = DOMPurify.sanitize(marked.parse(answer), { USE_PROFILES: { html: true } });  // 解析 Markdown 格式的回答
 
         loading.querySelectorAll("pre code").forEach((block) => {
             hljs.highlightElement(block);  // 高亮代码块
@@ -373,7 +374,7 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
 
             answer += text;
 
-            contentDiv.innerHTML = marked.parse(answer);
+            contentDiv.innerHTML = DOMPurify.sanitize(marked.parse(answer), { USE_PROFILES: { html: true } });
             loading.querySelectorAll("pre code").forEach((block) => {
                 hljs.highlightElement(block);
             });
@@ -401,9 +402,9 @@ href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-d
             addMessage("服务器出错，请稍后重试", "ai");
         } 
         else {
-            contentDiv.innerHTML += `
-                <p>⚠️ 回答生成中断，请稍后重试</p>
-            `;
+            const errorMessage = document.createElement("p");
+            errorMessage.textContent = "⚠️ 回答生成中断，请稍后重试";
+            contentDiv.appendChild(errorMessage);
         }
     }
     finally {
