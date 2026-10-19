@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from ai import chat as ai_chat, chat_stream
-from pydantic import BaseModel
+from typing import Annotated
+from pydantic import BaseModel, StringConstraints
 from database import clear_messages, get_messages, save_messages
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
@@ -16,12 +17,23 @@ app.add_middleware(
 
 )
 
+# 先去除首尾空白，再检查长度；保留问题内部的换行和空格。
+UserId = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=100, strict=True),
+]
+Question = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=4000, strict=True),
+]
+
+
 class ChatRequest(BaseModel):
-    user_id: str#user id
-    question: str#question from user
+    user_id: UserId
+    question: Question
 
 class ClearRequest(BaseModel):
-    user_id: str#user id
+    user_id: UserId
 
 @app.post("/clear")#api endpoint
 def clear_api(request: ClearRequest):#fastapi function #request must be a string
@@ -43,7 +55,7 @@ def chat_api(request: ChatRequest):#fastapi function #request must be a string
         }
 
 @app.get("/history/{user_id}")
-def history(user_id:str):
+def history(user_id: UserId):
 
     messages = get_messages(user_id)
 
