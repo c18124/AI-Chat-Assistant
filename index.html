@@ -1,465 +1,488 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <meta name="theme-color" content="#04182d">
+    <title>AI Chat Assistant · 深海工作台</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%23072543'/%3E%3Cpath d='M11 37c7-8 14-8 21 0s14 8 21 0M11 24c7-8 14-8 21 0s14 8 21 0' fill='none' stroke='%239fe5ff' stroke-width='4' stroke-linecap='round'/%3E%3C/svg%3E">
 
-    <title>AI chat ssistant </title>
-    <style>
-
-        #chat {
-            background-color: rgba(173, 216, 230, 0.75);
-            box-sizing: border-box;
-            width: 500px;
-            height: 400px;
-            border: 1px solid gray;
-            border-radius: 10px;
-            padding: 15px;
-            margin-bottom: 20px;
-            margin-left: auto;
-            margin-right: auto;
-            overflow-y: auto;
-        }
-        #question {
-            box-sizing: border-box;
-            flex: 1;
-            padding: 10px;
-            border: 1px solid gray;
-            border-radius: 8px;
-        }
-        #send,
-        #clear {
-            box-sizing: border-box;
-            border: none;
-            border-radius: 10px;
-            padding: 10px 16px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.14);
-            transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
-        }
-        #send {
-            background: linear-gradient(135deg, #2563eb, #4f46e5);
-            color: white;
-        }
-        #clear {
-            background: linear-gradient(135deg, #f97316, #ef4444);
-        }
-        #send:hover,
-        #clear:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.2);
-        }
-        #send:active,
-        #clear:active {
-            transform: translateY(0);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.16);
-        }
-        #send:disabled,
-        #clear:disabled {
-            cursor: not-allowed;
-            opacity: 0.6;
-            transform: none;
-        }
-        #input-area {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            width: 500px;
-            margin-left: auto;
-            margin-right: auto;
-        }
-
-        .message {
-            background-color:white;
-            padding:8px 12px 25px 12px;
-            border-radius:10px;
-            max-width:75%;
-            margin-bottom:10px;
-            white-space: normal;
-            position:relative;
-            word-break:break-word;
-        }
-        .user {
-            background-color: blue;
-            color: white;
-            margin-left: auto;
-            width:fit-content;
-        }
-        .ai {
-            background-color: white;
-            margin-right: auto;
-            color: black;
-            width:fit-content;
-        }
-        .toast {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-
-            background-color: black;
-            color: white;
-
-            padding: 10px 20px;
-            border-radius: 8px;
-
-            opacity: 0.8;
-
-            z-index: 999;
-        }
-        .dots {
-            animation: blink 1s infinite; 
-        }
-        @keyframes blink {
-            0% {
-                opacity: 0.2;
-            }
-            50% {
-                opacity: 1;
-            }
-            100% {
-                opacity: 0.2;
-            }
-        }
-        .message p {
-            margin:0;
-            white-space: pre-wrap;
-        }
-        .time {
-            position:absolute;
-            right:10px;
-            bottom:5px;
-
-            font-size:12px;
-            opacity:0.6;
-        }
-       
-
-        pre {   
-            background-color: #222;    
-            padding: 15px;
-            border-radius: 8px;
-            overflow-x: auto;
-        }
-          
-        pre code {
-            color: white;
-            font-family: Consolas, monospace;
-            font-size: 14px;
-        }
-        
-        body {
-            margin: 0;
-            min-height: 100vh;
-
-            background-image: url("./images/background.png");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-        }
-    </style>
-
-<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js"></script>
-      
-<link rel="stylesheet"
-href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <link rel="stylesheet" href="./static/css/style.css">
 </head>
 
-
-
 <body>
-    <div id="chat"></div>
-
-    <!-- 聊天模式切换 -->
-    <div id="mode-area">
-        <label for="chat-mode">聊天模式：</label>
-
-        <select id="chat-mode">
-            <option value="normal">普通聊天</option>
-            <option value="rag">知识库问答(RAG)</option>
-        </select>
+    <div class="ocean-background" aria-hidden="true">
+        <div class="video-fallback"></div>
+        <video
+            id="ocean-video"
+            class="ocean-video"
+            autoplay
+            muted
+            loop
+            playsinline
+            preload="metadata"
+            poster="./images/background.png"
+        >
+            <source src="./static/videos/ocean.mp4" type="video/mp4">
+        </video>
+        <div class="background-overlay"></div>
+        <div class="background-grain"></div>
+        <div class="ambient-glow ambient-glow-one"></div>
+        <div class="ambient-glow ambient-glow-two"></div>
     </div>
 
-    <div id="input-area">
-        <input id="question">
-        <button id="send">发送</button>
-        <button id="clear">清空聊天记录</button>
-    </div>
+    <header class="topbar">
+        <div class="brand" aria-label="AI Chat Assistant">
+            <div class="brand-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 14.5c2.6-2.8 5.2-2.8 7.8 0s5.2 2.8 7.8 0c.8-.9 1.6-1.4 2.4-1.7"/>
+                    <path d="M3 9.5c2.6-2.8 5.2-2.8 7.8 0s5.2 2.8 7.8 0c.8-.9 1.6-1.4 2.4-1.7"/>
+                </svg>
+            </div>
+            <div class="brand-copy">
+                <span class="brand-name">AI CHAT ASSISTANT</span>
+                <span class="brand-note">Ocean Intelligence</span>
+            </div>
+        </div>
 
+        <div class="nav-actions">
+            <div id="workspace-status" class="workspace-status" role="status" aria-live="polite">
+                <span class="status-dot" aria-hidden="true"></span>
+                <span class="status-text">AI 工作台在线</span>
+            </div>
+            <button id="clear" class="icon-button" type="button" aria-label="清空聊天记录">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M4 7h16"/>
+                    <path d="M9 7V4h6v3"/>
+                    <path d="M7 7l1 13h8l1-13"/>
+                    <path d="M10 11v5M14 11v5"/>
+                </svg>
+                <span>清空记录</span>
+            </button>
+        </div>
+    </header>
 
+    <main class="workspace">
+        <section class="workspace-intro" aria-labelledby="workspace-title">
+            <div class="intro-copy">
+                <p class="eyebrow">Immersive AI Workspace</p>
+                <h1 id="workspace-title">DeepSea <span>AI Workspace</span></h1>
+                <p class="intro-description">在流动海面与安静光影之间，继续你的智能对话、代码探索与知识库问答。</p>
+            </div>
+        </section>
 
+        <section class="chat-panel" aria-label="AI 聊天工作台">
+            <header class="panel-header">
+                <div class="assistant-profile">
+                    <div class="assistant-avatar" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 3a7 7 0 0 0-7 7v2a4 4 0 0 0 4 4h1"/>
+                            <path d="M12 3a7 7 0 0 1 7 7v2a4 4 0 0 1-4 4h-1"/>
+                            <path d="M9 20c1.8.9 4.2.9 6 0"/>
+                            <path d="M9 10h.01M15 10h.01"/>
+                        </svg>
+                    </div>
+                    <div class="assistant-copy">
+                        <span class="assistant-name">DeepSea Assistant</span>
+                        <span class="assistant-description">支持实时对话、Markdown 与知识库检索</span>
+                    </div>
+                </div>
 
-<script>
-      //load the chat history，打开界面时加载聊天记录
-    async function loadHistory(){
-        let response = await fetch(
-            "http://127.0.0.1:8000/history/001"
-        );
+                <div id="mode-area">
+                    <label for="chat-mode">对话模式</label>
+                    <div class="select-wrap">
+                        <select id="chat-mode" aria-label="选择聊天模式">
+                            <option value="normal">普通流式聊天</option>
+                            <option value="rag">知识库问答 RAG</option>
+                        </select>
+                    </div>
+                </div>
+            </header>
 
-        let data = await response.json();
+            <div id="chat" role="log" aria-live="polite" aria-relevant="additions text">
+                <div class="empty-state">
+                    <div class="empty-state-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 15.5c2.7-2.6 5.3-2.6 8 0s5.3 2.6 8 0"/>
+                            <path d="M4 10.5c2.7-2.6 5.3-2.6 8 0s5.3 2.6 8 0"/>
+                            <path d="M9 5.5c1.8-1.3 3.8-1.3 6 0"/>
+                        </svg>
+                    </div>
+                    <h2>开始一段新的探索</h2>
+                    <p>输入问题与 AI 对话，或切换到 RAG 模式，从本地知识库中寻找更贴合项目内容的答案。</p>
+                </div>
+            </div>
 
-        for(let message of data.messages){
-            if(message.role === "user"){
-                addMessage(
-                    message.content,
-                    "user"
-                );
-            }
+            <footer class="composer">
+                <div id="input-area">
+                    <label class="sr-only" for="question">输入消息</label>
+                    <input
+                        id="question"
+                        type="text"
+                        maxlength="4000"
+                        autocomplete="off"
+                        placeholder="向 DeepSea Assistant 发送消息…"
+                    >
+                    <button id="send" type="button">
+                        <span class="button-label">发送</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M21 3 10 14"/>
+                            <path d="m21 3-7 18-4-7-7-4 18-7Z"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="composer-meta" aria-hidden="true">
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16v14H4z"/><path d="M8 9h.01M12 9h.01M16 9h.01M8 13h8"/></svg>
+                        Enter 发送
+                    </span>
+                    <span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 5 6v5c0 4.8 2.8 8.1 7 10 4.2-1.9 7-5.2 7-10V6l-7-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+                        对话历史保存至本地数据库
+                    </span>
+                </div>
+            </footer>
+        </section>
+    </main>
 
-            else{
-                addMessage(
-                    message.content,
-                    "ai"
-                );
-            }
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.17/dist/purify.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="./static/js/animation.js"></script>
+
+    <script>
+        "use strict";
+
+        const API_BASE = "http://127.0.0.1:8000";
+        const USER_ID = "001";
+
+        const chat = document.getElementById("chat");
+        const questionInput = document.getElementById("question");
+        const sendButton = document.getElementById("send");
+        const clearButton = document.getElementById("clear");
+        const chatMode = document.getElementById("chat-mode");
+        const statusElement = document.getElementById("workspace-status");
+        const statusText = statusElement.querySelector(".status-text");
+
+        marked.setOptions({
+            gfm: true,
+            breaks: true
+        });
+
+        function setStatus(text, isBusy = false) {
+            statusText.textContent = text;
+            statusElement.classList.toggle("is-busy", isBusy);
         }
-    }
 
+        function setBusy(isBusy) {
+            sendButton.disabled = isBusy;
+            questionInput.disabled = isBusy;
+            clearButton.disabled = isBusy;
+            chatMode.disabled = isBusy;
+            sendButton.querySelector(".button-label").textContent = isBusy ? "生成中" : "发送";
+            setStatus(isBusy ? "AI 正在生成回答" : "AI 工作台在线", isBusy);
+        }
 
-      //show a toast message,界面弹窗显示消息后延时2秒后消失
-    function showToast(message) {
-        let toast = document.createElement("div");
-        toast.className = "toast";  //add a class to the toast
-        toast.innerText = message;  //add the message to the toast
-        document.body.appendChild(toast);  
-        setTimeout(() => {
-            toast.remove();
-        }, 2000);
-    }
+        function showToast(message, type = "info") {
+            const toast = document.createElement("div");
+            toast.className = `toast${type === "error" ? " is-error" : ""}`;
+            toast.setAttribute("role", "status");
+            toast.textContent = message;
+            document.body.appendChild(toast);
 
-      //add a message to the chat
-    function addMessage(content, role) {
-        let chat = document.getElementById("chat");
-        let message = document.createElement("div");
-        message.className = "message " + role;  //add a class to the message 总的message加上各个角色的class
-        let time = new Date().toLocaleTimeString(
-            [],
-            {
-                hour: "2-digit",
-                minute: "2-digit"
-            }
-        );
+            window.setTimeout(() => {
+                toast.remove();
+            }, 2400);
+        }
 
-            message.innerHTML = `
-            ${DOMPurify.sanitize(marked.parse(content), { USE_PROFILES: { html: true } })}
-            <span class="time">
-            ${time}
-            </span>
+        function showEmptyState() {
+            chat.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 15.5c2.7-2.6 5.3-2.6 8 0s5.3 2.6 8 0"/>
+                            <path d="M4 10.5c2.7-2.6 5.3-2.6 8 0s5.3 2.6 8 0"/>
+                            <path d="M9 5.5c1.8-1.3 3.8-1.3 6 0"/>
+                        </svg>
+                    </div>
+                    <h2>开始一段新的探索</h2>
+                    <p>输入问题与 AI 对话，或切换到 RAG 模式，从本地知识库中寻找更贴合项目内容的答案。</p>
+                </div>
             `;
-
-        chat.appendChild(message);  
-          //将代码块高亮
-        message.querySelectorAll("pre code").forEach((block) => {
-            hljs.highlightElement(block);
-        });
-        requestAnimationFrame(() => {
-            chat.scrollTop = chat.scrollHeight;  //scroll to the bottom底部滚动
-        });
-    }
-    
-      //添加enter键发送消息功能
-    document.getElementById("question").addEventListener("keydown",function(event) {
-        if (event.key === "Enter") {
-            document.getElementById("send").click();
-        }
-    });
-
-      //发送消息功能，监听按钮点击事件
-    // true：使用 RAG 知识库问答
-    // false：使用原来的普通流式聊天
-    document.getElementById("send").addEventListener("click",async function() {
-        let question = document.getElementById("question").value;  //获取输入框的内容
-        question = question.trim(); //去除前后空格，防止发送空消息
-        if (question === "") {
-            return;
-        }
-        document.getElementById("send").disabled = true;  //将按钮置为禁用
-        document.getElementById("question").disabled = true;  //将输入框置为禁用
-        document.getElementById("send").innerText = "生成中...";
-        addMessage(question, "user");  //添加消息到聊天记录，
-        document.getElementById("question").value = "";
-          //将数据发送到服务器
-        let data = {
-            user_id: "001",
-            question: question
-        }
-        const useRag =
-        document.getElementById("chat-mode").value === "rag";  // 获取选择的聊天模式,判断useRag
-          //创建一个loading消息，显示AI正在思考
-        let chat = document.getElementById("chat");
-
-        let loading = document.createElement("div");
-        loading.className = "message ai";
-        let contentDiv = document.createElement("div");
-        contentDiv.className = "content";
-        let timeSpan = document.createElement("span");
-        timeSpan.className = "time";
-
-        loading.appendChild(contentDiv);
-        loading.appendChild(timeSpan);
-
-        contentDiv.innerHTML = `
-        AI 正在思考
-        <span class="dots">...</span>
-        `;
-
-        chat.appendChild(loading);
-
-        let streamSuccess = false;
-        let answer = "";
-          //try catch  finally块，将数据发送到服务器
-    try {
-        const endpoint = useRag   //判断用哪个接口
-            ? "http://127.0.0.1:8000/rag/chat"
-            : "http://127.0.0.1:8000/chat/stream";
-
-        let response = await fetch(endpoint, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(data)
-        });
-
-        console.log(response.ok);
-        if (!response.ok) {
-            throw new Error("http error");
         }
 
-    
-    if (useRag) {
-        // RAG 返回 JSON，直接解析完整答案
-        const result = await response.json();
+        function hideEmptyState() {
+            chat.querySelector(".empty-state")?.remove();
+        }
 
-        answer = result.answer || "";
+        function scrollChatToBottom() {
+            window.requestAnimationFrame(() => {
+                chat.scrollTop = chat.scrollHeight;
+            });
+        }
 
-        contentDiv.innerHTML = DOMPurify.sanitize(marked.parse(answer), { USE_PROFILES: { html: true } });  // 解析 Markdown 格式的回答
-
-        loading.querySelectorAll("pre code").forEach((block) => {
-            hljs.highlightElement(block);  // 高亮代码块
-        });
-
-        chat.scrollTop = chat.scrollHeight;
-
-    } 
-    else {
-        // 普通聊天仍然使用流式输出
-        let reader = response.body.getReader();
-        let decoder = new TextDecoder("utf-8");
-        let hasStarted = false;   // 标记是否已经开始解析消息
-
-        while (true) {
-            let { done, value } = await reader.read();
-
-            if (done) {
-                break;
-            }
-
-            let text = decoder.decode(value, { stream: true });
-
-            if (!text) {
-                continue;
-            }
-
-            if (!hasStarted) {
-                contentDiv.innerHTML = "";
-                hasStarted = true;
-            }
-
-            answer += text;
-
-            contentDiv.innerHTML = DOMPurify.sanitize(marked.parse(answer), { USE_PROFILES: { html: true } });
-            loading.querySelectorAll("pre code").forEach((block) => {
-                hljs.highlightElement(block);
+        function renderMarkdown(container, content) {
+            const parsed = marked.parse(content || "");
+            container.innerHTML = DOMPurify.sanitize(parsed, {
+                USE_PROFILES: { html: true }
             });
 
-            chat.scrollTop = chat.scrollHeight;
+            container.querySelectorAll("pre code").forEach((block) => {
+                hljs.highlightElement(block);
+            });
         }
-    }
 
-// 两种模式都更新消息时间
-    let time = new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-    });
-
-    timeSpan.innerText = time;
-    streamSuccess = true;
-
-}    
-
-    catch (error) {
-        console.error("Error:", error);
-        showToast("请求失败，请检查服务器")
-
-        if (answer === "") {
-            addMessage("服务器出错，请稍后重试", "ai");
-        } 
-        else {
-            const errorMessage = document.createElement("p");
-            errorMessage.textContent = "⚠️ 回答生成中断，请稍后重试";
-            contentDiv.appendChild(errorMessage);
+        function getCurrentTime() {
+            return new Date().toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit"
+            });
         }
-    }
-    finally {
-        if (!streamSuccess && answer === "") {
-            loading.remove();
-        }
-        
-        document.getElementById("send").disabled = false;
-        document.getElementById("question").disabled = false;  //disable the input area
-        document.getElementById("send").innerText = "发送";
-        document.getElementById("question").focus();  //focus on the input area重新将光标集中到输入框
-        }
-    });
 
-      //clear the chat
-    document.getElementById("clear").addEventListener("click", async function(){
+        function addMessage(content, role, options = {}) {
+            hideEmptyState();
 
-        if(!confirm("是否清空聊天记录？")){
-            return;
+            const message = document.createElement("div");
+            message.className = `message ${role}`;
+
+            const contentElement = document.createElement("div");
+            contentElement.className = "content";
+            renderMarkdown(contentElement, content);
+
+            const timeElement = document.createElement("span");
+            timeElement.className = "time";
+            timeElement.textContent = getCurrentTime();
+
+            message.append(contentElement, timeElement);
+            chat.appendChild(message);
+
+            if (options.animate !== false) {
+                window.oceanUI?.animateMessage(message);
             }
-    try {
-        console.log("开始清空");
-        let response = await fetch(
-            "http://127.0.0.1:8000/clear", //api endpoint
-            {
-                method: "POST", //method to use
-                headers: { 
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    user_id: "001"
-                })
-            }
-        );
-        console.log("服务器返回");
-        if(!response.ok){
-            throw new Error("HTTP error");  // 服务器没有成功时主动抛出错误
+
+            scrollChatToBottom();
+            return message;
         }
 
-        let result = await response.json();
-      // clear the chat 实际的网页清空气泡
-        document.getElementById("chat").innerHTML = "";
-        showToast(result.message);  // 显示清空成功的消息
-    }
+        function createLoadingMessage() {
+            hideEmptyState();
 
-    catch (error) {
-        showToast("服务器连接失败");
+            const loading = document.createElement("div");
+            loading.className = "message ai is-loading";
 
-        addMessage("服务器出错，请稍后重试", "ai");  
-    }
-});
+            const contentElement = document.createElement("div");
+            contentElement.className = "content loading-copy";
+            contentElement.innerHTML = `
+                <span class="thinking-orb" aria-hidden="true"></span>
+                <span>AI 正在思考</span>
+                <span class="dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            `;
 
-    loadHistory(); //load the chat history
-    
+            const timeElement = document.createElement("span");
+            timeElement.className = "time";
+
+            loading.append(contentElement, timeElement);
+            chat.appendChild(loading);
+            window.oceanUI?.animateMessage(loading);
+            scrollChatToBottom();
+
+            return {
+                element: loading,
+                contentElement,
+                timeElement
+            };
+        }
+
+        async function loadHistory() {
+            setStatus("正在同步历史记录", true);
+
+            try {
+                const response = await fetch(`${API_BASE}/history/${USER_ID}`);
+
+                if (!response.ok) {
+                    throw new Error(`History request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const messages = Array.isArray(data.messages) ? data.messages : [];
+
+                if (messages.length === 0) {
+                    showEmptyState();
+                    return;
+                }
+
+                chat.innerHTML = "";
+                for (const message of messages) {
+                    addMessage(
+                        message.content,
+                        message.role === "user" ? "user" : "ai",
+                        { animate: false }
+                    );
+                }
+            } catch (error) {
+                console.error("加载历史记录失败:", error);
+                showEmptyState();
+                showToast("历史记录暂时无法加载，请检查后端服务", "error");
+            } finally {
+                setStatus("AI 工作台在线");
+            }
+        }
+
+        async function sendMessage() {
+            const question = questionInput.value.trim();
+
+            if (!question || sendButton.disabled) {
+                return;
+            }
+
+            const useRag = chatMode.value === "rag";
+            const endpoint = useRag ? `${API_BASE}/rag/chat` : `${API_BASE}/chat/stream`;
+            const requestData = {
+                user_id: USER_ID,
+                question
+            };
+
+            setBusy(true);
+            addMessage(question, "user");
+            questionInput.value = "";
+
+            const loading = createLoadingMessage();
+            let answer = "";
+            let requestCompleted = false;
+
+            try {
+                const response = await fetch(endpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                loading.contentElement.classList.remove("loading-copy");
+
+                if (useRag) {
+                    const result = await response.json();
+                    answer = result.answer || "";
+
+                    if (!answer) {
+                        throw new Error("RAG response is empty");
+                    }
+
+                    renderMarkdown(loading.contentElement, answer);
+                    scrollChatToBottom();
+                } else {
+                    if (!response.body) {
+                        throw new Error("Streaming response body is unavailable");
+                    }
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder("utf-8");
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+
+                        if (done) {
+                            answer += decoder.decode();
+                            break;
+                        }
+
+                        const text = decoder.decode(value, { stream: true });
+                        if (!text) {
+                            continue;
+                        }
+
+                        answer += text;
+                        renderMarkdown(loading.contentElement, answer);
+                        scrollChatToBottom();
+                    }
+
+                    if (!answer) {
+                        throw new Error("Streaming response is empty");
+                    }
+                }
+
+                loading.timeElement.textContent = getCurrentTime();
+                requestCompleted = true;
+            } catch (error) {
+                console.error("发送消息失败:", error);
+                showToast("请求失败，请检查后端服务或网络连接", "error");
+
+                if (!answer) {
+                    loading.element.remove();
+                    addMessage("服务器暂时无法完成请求，请稍后重试。", "ai");
+                } else {
+                    const interruption = document.createElement("p");
+                    interruption.className = "stream-interrupted";
+                    interruption.textContent = "⚠ 回答生成中断，请稍后重试。";
+                    loading.contentElement.appendChild(interruption);
+                    loading.timeElement.textContent = getCurrentTime();
+                }
+            } finally {
+                if (!requestCompleted && !answer && loading.element.isConnected) {
+                    loading.element.remove();
+                }
+
+                setBusy(false);
+                questionInput.focus();
+            }
+        }
+
+        async function clearHistory() {
+            if (!window.confirm("是否清空全部聊天记录？此操作会删除当前用户的历史消息。")) {
+                return;
+            }
+
+            clearButton.disabled = true;
+            setStatus("正在清空聊天记录", true);
+
+            try {
+                const response = await fetch(`${API_BASE}/clear`, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        user_id: USER_ID
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+
+                const result = await response.json();
+                showEmptyState();
+                window.oceanUI?.animateClear(chat);
+                showToast(result.message || "聊天记录已清空");
+            } catch (error) {
+                console.error("清空聊天记录失败:", error);
+                showToast("服务器连接失败，聊天记录未清空", "error");
+                addMessage("服务器暂时无法清空聊天记录，请稍后重试。", "ai");
+            } finally {
+                clearButton.disabled = false;
+                setStatus("AI 工作台在线");
+                questionInput.focus();
+            }
+        }
+
+        questionInput.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" && !event.isComposing) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+
+        sendButton.addEventListener("click", sendMessage);
+        clearButton.addEventListener("click", clearHistory);
+
+        loadHistory();
     </script>
 </body>
-
 </html>
