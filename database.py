@@ -48,6 +48,18 @@ def save_messages(user_id, role, content):
             (user_id, role, content)
         )
 
+def save_conversation(user_id, question, answer):
+    with get_db() as conn:
+        conn.executemany(
+            """
+            INSERT INTO messages (user_id, role, content)
+            VALUES (?, ?, ?)
+            """,
+            [
+                (user_id, "user", question),
+                (user_id, "assistant", answer),
+            ]
+        )
 
 def get_messages(user_id):
     with get_db() as conn:

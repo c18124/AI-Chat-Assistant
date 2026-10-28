@@ -1,12 +1,25 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from ai import chat as ai_chat, chat_stream
 from typing import Annotated
 from pydantic import BaseModel, StringConstraints
-from database import clear_messages, get_messages, save_messages
+from database import (
+    clear_messages,
+    get_messages,
+    save_messages,
+    save_conversation,
+)
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import time
 from rag import answer_question
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s - %(message)s"
+)
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI()
 app.add_middleware(
@@ -42,17 +55,27 @@ def clear_api(request: ClearRequest):#fastapi function #request must be a string
         "message": "聊天记录已清空"#return the message to the user
         }
 
-@app.post("/chat")#api endpoint
-def chat_api(request: ChatRequest):#fastapi function #request must be a string
+@app.post("/chat")
+def chat_api(request: ChatRequest):
+    logger.info("普通聊天请求开始处理")
 
-    answer = ai_chat(
-        request.user_id,
-        request.question
-    )
-    
-    return {
-        "answer": answer#return the answer to the user
+    try:
+        answer = ai_chat(
+            request.user_id,
+            request.question
+        )
+
+        return {
+            "answer": answer
         }
+
+    except Exception as exc:
+        logger.exception("普通聊天请求处理失败")
+
+        raise HTTPException(
+            status_code=500,
+            detail="服务器处理请求失败，请稍后重试"
+        ) from exc
 
 @app.get("/history/{user_id}")
 def history(user_id: UserId):
@@ -79,24 +102,28 @@ def chat_stream_api(request: ChatRequest):
 
 @app.post("/rag/chat")
 def rag_chat_api(request: ChatRequest):
-    # 保存用户问题
-    save_messages(
-        request.user_id,
-        "user",
-        request.question
-    )
+    logger.info("RAG 问答请求开始处理")
 
-    # 检索知识库并生成回答
-    answer = answer_question(request.question)
+    try:
+        # 先检索知识库并生成回答
+        answer = answer_question(request.question)
 
-    # 保存 AI 回答
-    save_messages(
-        request.user_id,
-        "assistant",
-        answer
-    )
+        # 回答生成成功后，一次性保存完整对话
+        save_conversation(
+            request.user_id,
+            request.question,
+            answer
+        )
 
-    # 返回答案给前端
-    return {
-        "answer": answer
-    }
+        # 返回答案给前端
+        return {
+            "answer": answer
+        }
+
+    except Exception as exc:
+        logger.exception("RAG 问答请求处理失败")
+
+        raise HTTPException(
+            status_code=500,
+            detail="知识库问答处理失败，请稍后重试"
+        ) from exc

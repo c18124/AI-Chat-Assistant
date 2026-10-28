@@ -132,12 +132,16 @@ def test_chat_rejects_empty_user_id():  # 测试 /chat 接口的错误处理，�
 
 def test_rag_chat_returns_answer_and_saves_messages(
     monkeypatch, test_db
-):  # 测试 /rag/chat 接口
+):
     # 1. 模拟 RAG 问答函数
-    def fake_answer_question(question):   # 模拟 RAG 问答函数
+    def fake_answer_question(question):
         return "这是模拟的知识库回答。"
 
-    monkeypatch.setattr(api, "answer_question", fake_answer_question)
+    monkeypatch.setattr(
+        api,
+        "answer_question",
+        fake_answer_question
+    )
 
     # 2. 发送 RAG 问答请求
     response = client.post(
@@ -154,15 +158,24 @@ def test_rag_chat_returns_answer_and_saves_messages(
         "answer": "这是模拟的知识库回答。"
     }
 
-    # 4. 检查用户问题和 AI 回答是否都被保存
-    history_response = client.get("/history/rag_test_user")
+    # 4. 检查历史记录接口
+    history_response = client.get(
+        "/history/rag_test_user"
+    )
 
     assert history_response.status_code == 200
-    assert history_response.json()["messages"] == [
-        {"role": "user", "content": "Python 是什么？"},
-        {"role": "assistant", "content": "这是模拟的知识库回答。"}
-    ]
 
+    # 5. 检查用户问题和 AI 回答是否都正确保存
+    assert history_response.json()["messages"] == [
+        {
+            "role": "user",
+            "content": "Python 是什么？"
+        },
+        {
+            "role": "assistant",
+            "content": "这是模拟的知识库回答。"
+        }
+    ]
 
 def test_chat_stream_returns_streamed_text(monkeypatch):  # 测试 /chat/stream 接口
     # 1. 模拟流式聊天函数
@@ -199,3 +212,52 @@ def test_chat_stream_rejects_empty_question():  # 测试 /chat/stream 接口的�
     )
 
     assert response.status_code == 422
+
+def test_chat_returns_500_when_ai_chat_fails(monkeypatch, caplog):
+    def fake_ai_chat(user_id, question):
+        raise RuntimeError("模拟模型服务故障")
+
+    monkeypatch.setattr(api, "ai_chat", fake_ai_chat)
+
+    with caplog.at_level("ERROR", logger="api"):
+        response = client.post(
+            "/chat",
+            json={
+                "user_id": "test_user",
+                "question": "你好"
+            }
+        )
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": "服务器处理请求失败，请稍后重试"
+    }
+    assert "普通聊天请求处理失败" in caplog.text
+    assert "模拟模型服务故障" in caplog.text
+
+def test_rag_chat_returns_500_when_rag_fails(
+    monkeypatch, test_db, caplog
+):
+    def fake_answer_question(question):
+        raise RuntimeError("模拟 RAG 检索故障")
+
+    monkeypatch.setattr(
+        api, "answer_question", fake_answer_question
+    )
+
+    with caplog.at_level("ERROR", logger="api"):
+        response = client.post(
+            "/rag/chat",
+            json={
+                "user_id": "rag_error_user",
+                "question": "数据库使用什么技术？"
+            }
+        )
+
+    assert response.status_code == 500
+    assert response.json() == {
+        "detail": "知识库问答处理失败，请稍后重试"
+    }
+    assert "RAG 问答请求处理失败" in caplog.text
+    assert "模拟 RAG 检索故障" in caplog.text
+    assert api.get_messages("rag_error_user") == []
